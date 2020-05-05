@@ -1,10 +1,8 @@
-import sqlite3
 from flask_restful import Resource, reqparse
 
 from models.user import UserModel
 
 class UserRegister(Resource):
-    TABLE = 'users'
     parser = reqparse.RequestParser()
     parser.add_argument(
         'username',
@@ -18,10 +16,10 @@ class UserRegister(Resource):
         required=True,
         help="This field cannot be left blank."
     )
-    
-    def post(self):
 
+    def post(self):
         data = UserRegister.parser.parse_args()
+        
         if UserModel.find_by_username(data['username']) is not None:
             return {"message": "username already exist"}, 400
 
@@ -29,4 +27,24 @@ class UserRegister(Resource):
         user.save_to_db()
 
         return {"message": "User created successfully."}, 201
-        
+
+
+class User(Resource):
+    """
+    This resource can be useful when testing our Flask app. We may not want to expose it to public users, but for the
+    sake of demonstration in this course, it can be useful when we are manipulating data regarding the users.
+    """
+    @classmethod
+    def get(cls, user_id: int):
+        user = UserModel.find_by_id(user_id)
+        if not user:
+            return {'message': 'User Not Found'}, 404
+        return user.json(), 200
+
+    @classmethod
+    def delete(cls, user_id: int):
+        user = UserModel.find_by_id(user_id)
+        if not user:
+            return {'message': 'User Not Found'}, 404
+        user.delete_from_db()
+        return {'message': 'User deleted.'}, 200

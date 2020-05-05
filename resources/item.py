@@ -22,28 +22,32 @@ class Item(Resource):
         item = ItemModel.find_by_name(name)
         if item is not None:
             return item.json(), 200
-        else:
-            return {'message': 'Item not found'}, 400
-        
+
+        return {'message': 'Item not found'}, 400
+
     @jwt_required()
     def post(self, name):
         if ItemModel.find_by_name(name) is not None:
             return {'message': f"An item with name'{name}' already exists."}, 400
-        else:
-            data = Item.parser.parse_args()
-            item = ItemModel(name, **data)
 
+        data = Item.parser.parse_args()
+        item = ItemModel(name, **data)
+
+        try:
             item.save_to_db()      
+        except:
+            return {"message": "An error occurred inserting the item."}, 500
 
-            return item.json(), 201
+        return item.json(), 201
     
     @jwt_required()
     def delete(self, name):
         item = ItemModel.find_by_name(name)
         if item is not None:
             item.delete_from_db()
+            return {"messsage": f"Item '{name}' deleted"}, 200
         
-        return {'message': 'Item deleted'}
+        return {'message': 'Item deleted'}, 404
 
     @jwt_required()
     def put(self, name):
@@ -63,4 +67,4 @@ class Item(Resource):
 class ItemList(Resource):
     def get(self):
         # return {'items': list(map(lambda x: x.json(), ItemModel.query.all()))}
-        return {'items': [item.json() for item in ItemModel.query.all()]}
+        return {'items': [item.json() for item in ItemModel.find_all()]}
